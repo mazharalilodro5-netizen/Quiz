@@ -119,6 +119,13 @@ input[type="range"].vol::-moz-range-thumb { width: 20px; height: 20px; border-ra
 .mq .chs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.mq .chp{background:var(--bar);border-radius:14px;padding:4px 10px;font-size:12px}
 .mq .lr{display:flex;align-items:center;gap:8px;padding:6px 0}.mq .lr b{flex:1;font-weight:600}.mq .lr .av2{margin:0}
 .mq .tabs2{display:flex;gap:6px;margin:6px 0}.mq .tabs2 button{border:0;border-radius:12px;padding:4px 12px;background:var(--bar);color:var(--tx)}.mq .tabs2 .a{background:var(--ac);color:#fff}
+.mq .stb{display:flex;gap:12px;overflow-x:auto;padding:8px 12px;background:var(--bar);border-bottom:1px solid var(--bd)}.mq .stb:empty{display:none}
+.mq .rg{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;width:58px;cursor:pointer;flex:none}.mq .rg .av2{width:46px;height:46px;font-size:18px;margin:0;box-shadow:0 0 0 2px var(--bar),0 0 0 4px var(--ac)}.mq .rg.sn .av2{box-shadow:0 0 0 2px var(--bar),0 0 0 4px var(--bd)}
+.mq .rg .n{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mq .pgs{display:flex;gap:3px;padding:8px 10px 0}.mq .pgs i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3)}.mq .pgs i.on{background:#fff}
+.mq .svi{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}.mq .svi img{max-width:100%;max-height:100%;object-fit:contain}
+.mq .nv{position:absolute;top:0;bottom:0;width:22%;border:0;background:none;color:#fff;font-size:34px;opacity:.55}.mq .nv.l{left:0}.mq .nv.r{right:0}
+.mq .svc{padding:6px 14px;text-align:center;min-height:8px}.mq .svm{max-height:28%;overflow-y:auto;padding:4px 14px;font-size:13px}.mq .svm div{padding:2px 0}.mq .svm b{margin-right:6px}
 </style>
 <button class="mq-fab" id="mq-b-chat" title="Live chat">💬<i></i></button>
 <button class="mq-fab" id="mq-b-fb" title="Feedback">⭐</button>
@@ -196,7 +203,7 @@ function bubble(d,me,del){
  const b=document.createElement('div');b.className='b'+(me?' me':'');b._d=d;b._me=me;b.dataset.m=1;
  b.innerHTML='<div class="nm"></div><div class="st"></div><div class="q" hidden></div><div class="t"></div><div class="n"></div><div class="rcs"></div><div class="mt"><span class="tm"></span><span class="tk"></span><span class="cp" title="Copy">'+SVGC+'</span><span class="xd">🗑</span></div>';
  const q=s=>b.querySelector(s);
- {const a=document.createElement('span');a.className='av2';if(okAv(d.av)){const im=new Image();im.src=d.av;im.referrerPolicy='no-referrer';a.appendChild(im)}else{a.textContent=(d.name||'G')[0].toUpperCase();a.style.background=hue(d.name)}q('.nm').append(a,(d.cc?flag(d.cc)+' ':'')+(d.name||'Guest'))}
+ {const a=document.createElement('span');a.className='av2';if(okAv(d.av)){const im=new Image();im.src=d.av;im.referrerPolicy='no-referrer';a.appendChild(im)}else{a.textContent=(d.name||'G')[0].toUpperCase();a.style.background=hue(d.name)}picFor(d.uid,a);q('.nm').append(a,(d.cc?flag(d.cc)+' ':'')+(d.name||'Guest'))}
  const r=Math.max(0,Math.min(5,+d.r||0));if(r)q('.st').textContent='★'.repeat(r)+'☆'.repeat(5-r);
  if(d.rp){const k=q('.q');k.hidden=false;k.dataset.j=d.rp.id;k.innerHTML='<b></b><span></span>';k.firstChild.textContent=d.rp.n||'';k.lastChild.textContent=d.rp.t||''}
  if(d.st)q('.t').classList.add('stk');
@@ -339,8 +346,8 @@ $('#mq-ch .pn').parentNode.insertAdjacentHTML('afterend','<div class="bar" id="a
 document.body.insertAdjacentHTML('beforeend','<div class="mq" id="mq-ad"><div class="mq-box"><div class="hd"><button class="x">←</button><div class="ttl"><b>🛡️ Owner panel</b><small id="ad-sub">Users</small></div></div><div class="msgs" id="ad-l"></div></div></div>');
 function acct(){const b=$('#acct'),u=S.user;
  b.innerHTML=u?'<span class="av2"></span><b style="flex:1"></b><button class="gs" id="go">Sign out</button>':'<button class="gs" id="gi">🔐 Sign in with Google</button><small style="flex:1">Optional. We store your name, photo and country; the owner can moderate chats.</small>';
- if(u){const a=b.firstChild;if(okAv(S.av)){const im=new Image();im.src=S.av;im.referrerPolicy='no-referrer';a.appendChild(im)}else a.textContent=(S.name||'U')[0];b.children[1].textContent=S.name+(S.owner?' · Owner':'')}
- $$('.pn').forEach(x=>x.disabled=!!u);const ab=$('.adm');if(ab)ab.hidden=!S.owner}
+ if(u){const a=b.firstChild;if(okAv(S.av)){const im=new Image();im.src=S.av;im.referrerPolicy='no-referrer';a.appendChild(im)}else a.textContent=(S.name||'U')[0];b.children[1].textContent=S.name+(S.owner?' · Owner':'');picFor(S.uid,b.firstChild)}
+ if(u)b.insertAdjacentHTML('beforeend','<button class="gs" id="pp" title="Change profile photo">📷</button><button class="gs" id="sa">➕ Story</button>');$$('.pn').forEach(x=>x.disabled=!!u);const ab=$('.adm');if(ab)ab.hidden=!S.owner}
 async function onUser(u){
  S.user=u||null;S.owner=!!(u&&u.email&&C.ownerEmail&&u.email.toLowerCase()===String(C.ownerEmail).toLowerCase());S.admin=S.owner;
  if(BR){BR.off();BR=null}
@@ -406,7 +413,7 @@ const wkey=t=>{const d=new Date(t||Date.now());d.setUTCDate(d.getUTCDate()+4-(d.
 const todayQ=()=>QS[Math.floor(Date.now()/864e5)%QS.length];
 let LBT='w';
 const bdg=r=>{const a=[];if(S.owner)a.push('👑 Owner');if(r.b>=30)a.push('🌟 30-day streak');else if(r.b>=7)a.push('🔥 7-day streak');if(r.d>=500)a.push('💎 500 club');else if(r.d>=100)a.push('💎 100 club');else if(r.d>=5)a.push('✨ First diamonds');return a.length?a:['🌱 New member']};
-const avEl=(el,url,name)=>{if(okAv(url)){const im=new Image();im.src=url;im.referrerPolicy='no-referrer';el.appendChild(im)}else{el.textContent=(name||'G')[0].toUpperCase();el.style.background=hue(name)}};
+const avEl=(el,url,name,uid)=>{setTimeout(()=>picFor(uid,el),0);if(okAv(url)){const im=new Image();im.src=url;im.referrerPolicy='no-referrer';el.appendChild(im)}else{el.textContent=(name||'G')[0].toUpperCase();el.style.background=hue(name)}};
 document.body.insertAdjacentHTML('beforeend','<button class="mq-fab" id="mq-b-dy" title="Daily challenge">🏆</button><div class="mq" id="mq-dy"><div class="mq-box"><div class="hd"><button class="x">←</button><div class="ttl"><b>🏆 Daily Challenge</b><small>New question every day at 5:00 AM Pakistan time</small></div><button class="th" title="Theme">🎨</button></div><div class="msgs" style="gap:12px"><div class="cd" id="dy-me"></div><div class="cd"><b>Your streak and diamonds</b><div id="dy-st" class="big"></div></div><div class="cd"><b>Today’s question</b><div id="dy-qt" style="margin:6px 0"></div><div id="dy-op"></div><div id="dy-rs" style="white-space:pre-wrap;margin-top:6px;font-weight:600"></div></div><div class="cd"><b>🥇 Top players</b><div class="tabs2" id="dy-tb"><button class="a" data-k="w">This week</button><button data-k="a">All time</button></div><div id="dy-lb"></div></div></div></div></div>');
 paint();
 function award(ok){const today=dkey(),y=dkey(Date.now()-864e5),wk=wkey();
@@ -422,7 +429,7 @@ async function dyStats(){
  const cur=(r.last===dkey()||r.last===dkey(Date.now()-864e5))?r.s:0;
  $('#dy-st').textContent='🔥 '+cur+(cur===1?' day':' days')+'   ·   💎 '+(r.d||0)+'\nBest streak: '+(r.b||0)+' days\nBonus: 💎 +20 at 7 days, 💎 +100 at 30 days';
  const mc=$('#dy-me');mc.innerHTML='<div style="display:flex;align-items:center;gap:10px"><span class="av2" style="width:46px;height:46px;font-size:20px;margin:0"></span><div><b></b><div style="font-size:12px;opacity:.75"></div></div></div><div class="chs"></div>';
- avEl(mc.querySelector('.av2'),u?S.av:'',u?S.name:'Guest');
+ avEl(mc.querySelector('.av2'),u?S.av:'',u?S.name:'Guest',u?u.uid:'');
  mc.querySelector('b').textContent=u?S.name:'Guest';
  let jn='';if(DB&&u){const j=await DB.ref('quizhub_users/'+u.uid+'/joined').once('value');if(j.val())jn=' · Joined '+new Date(j.val()).toLocaleDateString()}
  mc.querySelector('b').nextSibling.textContent=(S.cc&&S.cc!=='XX'?flag(S.cc)+' '+rname(S.cc):'')+jn;
@@ -434,7 +441,7 @@ async function lb(){const L=$('#dy-lb');L.innerHTML='';if(!DB){L.textContent='No
  const val=v=>LBT==='w'?(v.wk===wk?v.wd||0:0):v.d||0;
  rows.sort((a,b)=>val(b[1])-val(a[1]));
  rows.filter(r=>val(r[1])>0).slice(0,10).forEach(([id,v],i)=>{const d=document.createElement('div');d.className='lr';d.innerHTML='<span></span><span class="av2"></span><b></b><span></span>';const c=d.children;
-  c[0].textContent=['🥇','🥈','🥉'][i]||(i+1);avEl(c[1],v.av,v.name);
+  c[0].textContent=['🥇','🥈','🥉'][i]||(i+1);avEl(c[1],v.av,v.name,id);
   c[2].textContent=(v.name||'User')+(S.user&&id===S.user.uid?' (You)':'')+' '+(v.cc&&v.cc!=='XX'?flag(v.cc):'');c[3].textContent='💎 '+val(v);L.appendChild(d)});
  if(!L.children.length)L.textContent='No scores yet. Be the first! 💎'}
 async function dyLoad(){
@@ -454,6 +461,67 @@ $('#mq-b-dy').onclick=()=>{$('#mq-dy').classList.add('on');dyLoad()};
 document.addEventListener('click',e=>{const t=e.target,o=t.closest('#dy-op .opt'),tb=t.closest('#dy-tb button');
  if(o&&!o.disabled)answer(+o.dataset.i);
  else if(tb){LBT=tb.dataset.k;$$('#dy-tb button').forEach(x=>x.classList.toggle('a',x===tb));lb()}});
+
+/* ---------- V20: profile photo upload + 24-hour stories ---------- */
+const PICS={},PW={};let FPm='',STR=[],SEENS={},SV={list:[],i:0,cref:null,vref:null};
+try{SEENS=JSON.parse(localStorage.getItem('mq_sst')||'{}')}catch(e){}
+const okPic=u=>/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(u||'')&&u.length<150000;
+const ago=t=>{const m=Math.floor((Date.now()-t)/6e4);return m<1?'just now':m<60?m+' min ago':Math.floor(m/60)+' h ago'};
+function setPic(el,u){el.textContent='';el.style.background='none';const im=new Image();im.src=u;el.appendChild(im)}
+function picFor(uid,el){if(!DB||!uid)return;el.dataset.u=uid;
+ if(PICS[uid]!==undefined){if(PICS[uid])setPic(el,PICS[uid]);return}
+ (PW[uid]=PW[uid]||[]).push(el);if(PW[uid].length>1)return;
+ DB.ref('quizhub_pics/'+uid).once('value').then(x=>{const v=x.val();PICS[uid]=okPic(v)&&v.length<40000?v:false;(PW[uid]||[]).forEach(e=>PICS[uid]&&setPic(e,PICS[uid]));delete PW[uid]},()=>{PICS[uid]=false;delete PW[uid]})}
+function shrink(file,max,q,sq){return new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(file);
+ im.onload=()=>{let w=im.width,h=im.height,sx=0,sy=0,sw=w,sh=h;
+  if(sq){const m=Math.min(w,h);sx=(w-m)/2;sy=(h-m)/2;sw=sh=m;w=h=max}else{const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k)}
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,sx,sy,sw,sh,0,0,w,h);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};
+ im.onerror=()=>rej(new Error('bad image'));im.src=u})}
+document.body.insertAdjacentHTML('beforeend','<input type="file" id="fp" accept="image/*" hidden><div class="mq" id="mq-sv"><div class="mq-box" style="background:#000;color:#fff"><div class="pgs" id="sv-pg"></div><div class="hd" style="background:none"><button class="x">←</button><span class="av2" id="sv-av" style="margin:0;width:34px;height:34px"></span><div class="ttl"><b id="sv-n"></b><small id="sv-t"></small></div><button id="sv-d" hidden title="Delete story">🗑</button></div><div class="svi"><button class="nv l" id="sv-l">‹</button><img id="sv-i" alt=""><button class="nv r" id="sv-r">›</button></div><div class="svc" id="sv-c"></div><div class="svm" id="sv-cm"></div><div class="cmp"><input id="sv-in" placeholder="Comment..." maxlength="200" autocomplete="off"><button id="sv-s">➤</button></div></div></div>');
+$('#acct').insertAdjacentHTML('afterend','<div class="stb" id="stb"></div>');
+paint();
+function strip(){const w=$('#stb');w.innerHTML='';const g={};STR.forEach(x=>(g[x.uid]=g[x.uid]||[]).push(x));
+ Object.keys(g).sort((a,b)=>a===S.uid?-1:b===S.uid?1:g[b][g[b].length-1].ts-g[a][g[a].length-1].ts).forEach(u=>{
+  const l=g[u],d=document.createElement('div');d.className='rg'+(l.every(x=>SEENS[x.id])?' sn':'');d.dataset.u=u;d.innerHTML='<span class="av2"></span><span class="n"></span>';
+  avEl(d.firstChild,l[0].av,l[0].name,u);d.lastChild.textContent=u===S.uid?'My story':l[0].name;w.appendChild(d)})}
+function delStory(id){DB.ref('quizhub_story_meta/'+id).remove();DB.ref('quizhub_story_img/'+id).remove();DB.ref('quizhub_story_cm/'+id).remove();DB.ref('quizhub_story_views/'+id).remove()}
+function detachSV(){if(SV.cref)SV.cref.off();if(SV.vref)SV.vref.off();SV.cref=SV.vref=null}
+function openSV(u){SV.list=STR.filter(x=>x.uid===u);if(!SV.list.length)return;const n=SV.list.findIndex(x=>!SEENS[x.id]);SV.i=n<0?0:n;$('#mq-sv').classList.add('on');sv()}
+function sv(){detachSV();const x=SV.list[SV.i];if(!x){$('#mq-sv').classList.remove('on');return}
+ $('#sv-n').textContent=x.name||'User';const a=$('#sv-av');a.textContent='';a.style.background='';avEl(a,x.av,x.name,x.uid);
+ $('#sv-t').textContent=ago(x.ts);$('#sv-c').textContent=x.cap||'';$('#sv-cm').innerHTML='';
+ $('#sv-pg').innerHTML=SV.list.map((_,k)=>'<i'+(k<=SV.i?' class="on"':'')+'></i>').join('');
+ const im=$('#sv-i');im.removeAttribute('src');
+ DB.ref('quizhub_story_img/'+x.id).once('value').then(r=>{if(SV.list[SV.i]===x&&okPic(r.val()))im.src=r.val()});
+ SEENS[x.id]=1;try{localStorage.setItem('mq_sst',JSON.stringify(SEENS))}catch(e){}strip();
+ $('#sv-d').hidden=!(x.uid===S.uid||S.owner);
+ SV.cref=DB.ref('quizhub_story_cm/'+x.id).limitToLast(50);
+ SV.cref.on('child_added',r=>{const c=r.val();if(!c)return;const d=document.createElement('div');d.innerHTML='<b></b><span></span>';d.firstChild.textContent=c.name||'Guest';d.lastChild.textContent=c.text||'';const L=$('#sv-cm');L.appendChild(d);L.scrollTop=L.scrollHeight});
+ if(x.uid!==S.uid)DB.ref('quizhub_story_views/'+x.id+'/'+S.uid).set(true);
+ else{SV.vref=DB.ref('quizhub_story_views/'+x.id);SV.vref.on('value',r=>{$('#sv-t').textContent=ago(x.ts)+' · 👁 '+r.numChildren()})}}
+function sendCm(){const i=$('#sv-in'),t=i.value.trim(),x=SV.list[SV.i];if(!t||!x||!DB||!ok())return;i.value='';DB.ref('quizhub_story_cm/'+x.id).push({uid:S.uid,name:S.name||'Guest',text:t,ts:TS()})}
+$('#sv-in').onkeydown=e=>{if(e.key==='Enter')sendCm()};
+$('#fp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f||!DB||!S.user)return;
+ if(S.banned)return alert('You are muted by the owner.');
+ try{
+  if(FPm==='pic'){const d=await shrink(f,160,.8,true);await DB.ref('quizhub_pics/'+S.uid).set(d);PICS[S.uid]=d;$$('.av2[data-u="'+S.uid+'"]').forEach(el=>setPic(el,d));alert('Profile photo updated ✅')}
+  else{if(STR.filter(x=>x.uid===S.uid).length>=5)return alert('You can have up to 5 stories at a time.');
+   const cap=(prompt('Add a caption (optional)')||'').slice(0,120),img=await shrink(f,720,.7,false);if(img.length>140000)throw new Error('big');
+   const id=DB.ref('quizhub_story_meta').push().key;await DB.ref('quizhub_story_img/'+id).set(img);
+   await DB.ref('quizhub_story_meta/'+id).set({uid:S.uid,name:S.name||'User',av:S.av||'',cap,ts:TS()});alert('Story posted for 24 hours ✅')}
+ }catch(x){alert('Could not upload that picture. Try another one.')}};
+document.addEventListener('click',e=>{const t=e.target;
+ if(t.id==='pp'){FPm='pic';$('#fp').click()}
+ else if(t.id==='sa'){if(!DB)return alert('Not connected to the server yet.');FPm='st';$('#fp').click()}
+ else if(t.closest('#stb .rg'))openSV(t.closest('.rg').dataset.u);
+ else if(t.id==='sv-r'){SV.i++;sv()}
+ else if(t.id==='sv-l'){if(SV.i>0){SV.i--;sv()}}
+ else if(t.id==='sv-d'){const x=SV.list[SV.i];if(x&&confirm('Delete this story?')){delStory(x.id);SV.list.splice(SV.i,1);if(SV.i>=SV.list.length)SV.i=Math.max(0,SV.list.length-1);sv()}}
+ else if(t.id==='sv-s')sendCm();
+ else if(t.closest('#mq-sv .x')||t.id==='mq-sv')detachSV()});
+if(DB)DB.ref('quizhub_story_meta').on('value',x=>{const cut=Date.now()-864e5,a=[];
+ x.forEach(c=>{const v=c.val();if(!v)return;if(v.ts&&v.ts<cut){delStory(c.key);return}a.push({id:c.key,...v})});
+ a.sort((p,q)=>p.ts-q.ts);STR=a;strip()});
 
 /* ---------- Go live ---------- */
 if(DB){
