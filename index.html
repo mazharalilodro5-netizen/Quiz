@@ -126,6 +126,15 @@ input[type="range"].vol::-moz-range-thumb { width: 20px; height: 20px; border-ra
 .mq .svi{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}.mq .svi img{max-width:100%;max-height:100%;object-fit:contain}
 .mq .nv{position:absolute;top:0;bottom:0;width:22%;border:0;background:none;color:#fff;font-size:34px;opacity:.55}.mq .nv.l{left:0}.mq .nv.r{right:0}
 .mq .svc{padding:6px 14px;text-align:center;min-height:8px}.mq .svm{max-height:28%;overflow-y:auto;padding:4px 14px;font-size:13px}.mq .svm div{padding:2px 0}.mq .svm b{margin-right:6px}
+.mq .mb{background:none;color:inherit;width:36px}
+.mq .md{margin:3px 0}.mq .b[data-mt] .t,.mq .b[data-mt] .n{display:none}
+.mq .mdb{border:1px dashed var(--bd);background:var(--bar);color:var(--tx);border-radius:10px;padding:18px 14px;width:200px;cursor:pointer}
+.mq .mdi{max-width:240px;max-height:300px;border-radius:10px;display:block;cursor:pointer}
+.mq .vm{display:flex;align-items:center;gap:8px;min-width:200px}.mq .vm .vb{width:34px;height:34px;border-radius:50%;border:0;background:var(--ac);color:#fff;flex:none}
+.mq .vw{display:flex;gap:2px;align-items:center;flex:1;height:26px}.mq .vw i{width:3px;background:var(--tx);opacity:.45;border-radius:2px;display:block}
+.mq .playing .vw i{background:var(--ac);opacity:1;animation:mqp .6s ease-in-out infinite alternate}.mq .playing .vw i:nth-child(odd){animation-delay:.25s}@keyframes mqp{to{transform:scaleY(.4)}}
+.mq .rcb{display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--bar);border-top:1px solid var(--bd);font-size:13px}.mq .rcb.on{display:flex}.mq .rcb span{flex:1;color:#e11d48;font-weight:700}.mq .rcb button{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:14px;padding:6px 12px}
+#iv{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center}#iv.on{display:flex}#iv img{max-width:100%;max-height:100%}
 </style>
 <button class="mq-fab" id="mq-b-chat" title="Live chat">💬<i></i></button>
 <button class="mq-fab" id="mq-b-fb" title="Feedback">⭐</button>
@@ -164,7 +173,7 @@ async function tr(text,to,hint){
  if(!r&&hint&&hint!==to)try{const j=await jf(`https://api.mymemory.translated.net/get?q=${e}&langpair=${hint}|${to}`);if(j.responseStatus==200&&j.responseData.translatedText)r={t:j.responseData.translatedText,from:hint}}catch(x){}
  return r&&r.t?(TC[k]=r):null}
 async function render(b){
- const d=b._d,t=b.querySelector('.t'),n=b.querySelector('.n'),k=b._k=(b._k||0)+1,want=!b._me&&!d.st&&(b._ov===undefined?S.auto:b._ov);
+ const d=b._d,t=b.querySelector('.t'),n=b.querySelector('.n'),k=b._k=(b._k||0)+1,want=!b._me&&!d.st&&!d.mt&&(b._ov===undefined?S.auto:b._ov);
  t.textContent=d.text;
  if(!want){n.textContent=b._me?'':(S.auto?'↩ Show translation':'🌐 Translate');return}
  n.textContent='🌐 Translating…';
@@ -210,7 +219,7 @@ function bubble(d,me,del){
  q('.tm').textContent=tm(d.ts);
  const x=q('.xd');if(del)x.onclick=()=>confirm('Delete this message?')&&(del(),DB||b.remove());else x.remove();
  q('.n').onclick=()=>{if(b._f){render(b);return}b._ov=!(b._ov===undefined?S.auto:b._ov);render(b)};
- reacts(b);render(b);return b}
+ if(d.mt)mediaUI(b,d);reacts(b);render(b);return b}
 const sys=(L,t)=>{const d=document.createElement('div');d.className='b sys';d.textContent=t;L.appendChild(d);return d};
 const stick=(L,f,force)=>{const n=L.scrollHeight-L.scrollTop-L.clientHeight<150;f();if(n||force)L.scrollTop=L.scrollHeight};
 const rm=(sel,id)=>{const e=$(sel).querySelector(`[data-id="${id}"]`);if(e)e.remove()};
@@ -522,6 +531,60 @@ document.addEventListener('click',e=>{const t=e.target;
 if(DB)DB.ref('quizhub_story_meta').on('value',x=>{const cut=Date.now()-864e5,a=[];
  x.forEach(c=>{const v=c.val();if(!v)return;if(v.ts&&v.ts<cut){delStory(c.key);return}a.push({id:c.key,...v})});
  a.sort((p,q)=>p.ts-q.ts);STR=a;strip()});
+
+/* ---------- V21: picture + voice note sending ---------- */
+const MED={},fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');let AUD=null,REC=null,MP='';
+document.body.insertAdjacentHTML('beforeend','<input type="file" id="fm" accept="image/*" hidden><div id="iv"><img alt=""></div>');
+['ch','pv'].forEach(p=>{const c=$('#'+p+'-i').closest('.cmp');
+ c.insertAdjacentHTML('beforebegin','<div class="rcb"><span>● Recording 0:00</span><button data-a="x">✕</button><button data-a="s">Send ➤</button></div>');
+ $('#'+p+'-s').insertAdjacentHTML('beforebegin','<button class="mb pbtn" title="Send a photo">📷</button><button class="mb mbtn" title="Voice note">🎤</button>')});
+async function getMed(b){const d=b._d,priv=!!b.closest('#mq-pv'),path='quizhub_media/'+(priv?'p_'+P.room+'/':'')+d.mid;
+ if(MED[path])return MED[path];
+ const v=(await DB.ref(path).once('value')).val();if(!v)return null;
+ const u=priv?await dec(v):v,good=d.mt==='i'?/^data:image\/(jpeg|png|webp);base64,/.test(u||''):/^data:audio\/(webm|mp4|ogg|mpeg|aac|x-m4a)[;,]/.test(u||'');
+ return good?(MED[path]=u):null}
+function stopAud(){if(!AUD)return;AUD.a.pause();AUD.b.querySelector('.md').classList.remove('playing');AUD.bt.textContent='▶';AUD=null}
+function mediaUI(b,d){b.dataset.mt=d.mt;const m=document.createElement('div');m.className='md';b.querySelector('.t').after(m);
+ if(d.mt==='i'){const bt=document.createElement('button');bt.className='mdb';bt.textContent='📷 Tap to view photo'+(d.sz?' · '+d.sz+' KB':'');
+  bt.onclick=async()=>{if(!DB)return;bt.textContent='Loading…';const u=await getMed(b);if(!u){bt.textContent='⚠ Photo unavailable';return}
+   const im=new Image();im.src=u;im.className='mdi';im.onclick=()=>{$('#iv img').src=u;$('#iv').classList.add('on')};m.replaceChildren(im)};m.appendChild(bt)}
+ else{m.className='md vm';m.innerHTML='<button class="vb">▶</button><span class="vw">'+'<i></i>'.repeat(18)+'</span><small></small>';m.querySelector('small').textContent=fmt(d.dur||0);
+  m.querySelectorAll('.vw i').forEach((i,k)=>i.style.height=(6+(k*7)%18)+'px');const bt=m.querySelector('.vb');
+  bt.onclick=async()=>{if(AUD&&AUD.b===b){stopAud();return}stopAud();bt.textContent='…';const u=await getMed(b);if(!u){bt.textContent='⚠';return}
+   const a=new Audio(u);AUD={a,b,bt};m.classList.add('playing');bt.textContent='❚❚';a.onended=stopAud;
+   a.onerror=()=>{stopAud();alert('This voice note cannot be played on your phone. It may have been recorded on a different type of phone.')};a.play().catch(stopAud)}}}
+async function sendMedia(p,kind,data,dur){
+ if(!DB)return alert('Not connected to the server yet.');if(p==='pv'&&!P.key)return;if(!ok())return;
+ const priv=p==='pv',id=DB.ref('quizhub_media').push().key;
+ await DB.ref('quizhub_media/'+(priv?'p_'+P.room+'/':'')+id).set(priv?await enc(data):data);
+ const tx=kind==='i'?'📷 Photo':'🎤 Voice note',d={name:S.name||'Guest',lang:S.lang,uid:S.uid,av:S.av||null,mt:kind,mid:id,sz:Math.round(data.length/1024),dur:dur||null,ts:TS()};
+ if(priv)d.enc=await enc(tx);else{d.text=tx;d.cc=S.cc}
+ DB.ref(priv?'quizhub_private/'+P.room+'/msgs':'quizhub_chat').push(d)}
+const showRec=(p,on)=>$('#mq-'+p+' .rcb').classList.toggle('on',on);
+function recStop(send){if(!REC)return;REC.cancel=!send;REC.mr.stop()}
+async function recStart(p){
+ if(!navigator.mediaDevices||!window.MediaRecorder)return alert('Voice notes are not supported on this browser.');
+ if(!DB)return alert('Not connected to the server yet.');if(p==='pv'&&!P.key)return;
+ let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return alert('Please allow the microphone to send voice notes.')}
+ const mt=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg'].find(x=>MediaRecorder.isTypeSupported(x))||'',ch=[],t0=Date.now();
+ const mr=new MediaRecorder(st,mt?{mimeType:mt,audioBitsPerSecond:24000}:{audioBitsPerSecond:24000});
+ mr.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};
+ const bar=$('#mq-'+p+' .rcb span');
+ REC={p,mr,cancel:false,tm:setInterval(()=>{const n=Math.floor((Date.now()-t0)/1000);bar.textContent='● Recording '+fmt(n);if(n>=60)recStop(true)},300)};
+ mr.onstop=async()=>{st.getTracks().forEach(x=>x.stop());const r=REC;clearInterval(r.tm);REC=null;showRec(p,false);if(r.cancel)return;
+  const dur=Math.round((Date.now()-t0)/1000);if(dur<1)return;
+  const url=await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(new Blob(ch,{type:mr.mimeType||mt||'audio/webm'}))});
+  if(url.length>450000)return alert('That voice note is too long. Keep it under 1 minute.');sendMedia(p,'v',url,dur)};
+ mr.start();showRec(p,true)}
+$('#fm').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{let d=await shrink(f,800,.7,false);if(d.length>140000)d=await shrink(f,640,.55,false);if(d.length>140000)throw new Error('big');await sendMedia(MP,'i',d)}
+ catch(x){alert('Could not send that picture. Try another one.')}};
+document.addEventListener('click',e=>{const t=e.target,mq=t.closest('.mq'),pn=mq?mq.id.slice(3):'';
+ if(t.closest('.pbtn')){MP=pn;$('#fm').click()}
+ else if(t.closest('.mbtn')){REC?recStop(true):recStart(pn)}
+ else if(t.closest('.rcb button'))recStop(t.dataset.a==='s');
+ else if(t.closest('.mq .x')&&REC)recStop(false);
+ else if(t.closest('#iv'))$('#iv').classList.remove('on')});
 
 /* ---------- Go live ---------- */
 if(DB){
