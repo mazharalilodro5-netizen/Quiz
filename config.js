@@ -3,7 +3,7 @@
 window.MQ_CFG={
  firebase:{
   apiKey:"AIzaSyBB6dv7OpKEjj0V523dU_bNlrszq-FQ2Ns",
-  authDomain:"https://mazhar-quiz-hub.firebaseapp.com",
+  authDomain:"mazhar-quiz-hub.firebaseapp.com",
   databaseURL:"https://mazhar-quiz-hub-default-rtdb.firebaseio.com",
   projectId:"mazhar-quiz-hub",
   storageBucket:"https://mazhar-quiz-hub.firebasestorage.app",
