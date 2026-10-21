@@ -135,6 +135,8 @@ input[type="range"].vol::-moz-range-thumb { width: 20px; height: 20px; border-ra
 .mq .playing .vw i{background:var(--ac);opacity:1;animation:mqp .6s ease-in-out infinite alternate}.mq .playing .vw i:nth-child(odd){animation-delay:.25s}@keyframes mqp{to{transform:scaleY(.4)}}
 .mq .rcb{display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--bar);border-top:1px solid var(--bd);font-size:13px}.mq .rcb.on{display:flex}.mq .rcb span{flex:1;color:#e11d48;font-weight:700}.mq .rcb button{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:14px;padding:6px 12px}
 #iv{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center}#iv.on{display:flex}#iv img{max-width:100%;max-height:100%}
+#mq-b-ai{bottom:354px;background:linear-gradient(135deg,#7c3aed,#06b6d4)}
+.mq .chips2{display:flex;gap:6px;flex-wrap:wrap;padding:6px 10px;background:var(--bm)}.mq .chips2 button{border:1px solid var(--ac);color:var(--ac);background:none;border-radius:16px;padding:5px 11px;font-size:13px}
 </style>
 <button class="mq-fab" id="mq-b-chat" title="Live chat">💬<i></i></button>
 <button class="mq-fab" id="mq-b-fb" title="Feedback">⭐</button>
@@ -602,6 +604,31 @@ document.addEventListener('click',e=>{const t=e.target,mq=t.closest('.mq'),pn=mq
  else if(t.closest('.rcb button'))recStop(t.dataset.a==='s');
  else if(t.closest('.mq .x')&&REC)recStop(false);
  else if(t.closest('#iv'))$('#iv').classList.remove('on')});
+
+/* ---------- V23: AI Study Buddy ---------- */
+const AIH=[];let AIB=false;
+document.body.insertAdjacentHTML('beforeend','<button class="mq-fab" id="mq-b-ai" title="Study Buddy">🤖</button><div class="mq" id="mq-ai"><div class="mq-box"><div class="hd"><button class="x">←</button><div class="ttl"><b>🤖 Study Buddy</b><small id="ai-sub">Ask about any MCQ or topic</small></div><button class="th" title="Theme">🎨</button></div><div class="msgs" id="ai-m"></div><div class="chips2" id="ai-ch"><button>Explain mitochondria</button><button>Quiz me on Biology</button><button>MDCAT study tips</button></div><div class="cmp"><input id="ai-i" placeholder="Ask anything..." maxlength="500" autocomplete="off" enterkeyhint="send"><button id="ai-s" aria-label="Send">➤</button></div></div></div>');
+paint();
+const aiAdd=(who,t)=>{const L=$('#ai-m'),d=document.createElement('div');d.className='b'+(who==='u'?' me':'');d.innerHTML='<div class="t"></div>';d.firstChild.textContent=t;L.appendChild(d);L.scrollTop=L.scrollHeight;return d};
+async function aiAsk(q){
+ q=q.trim();if(!q||AIB)return;aiAdd('u',q);
+ if(!C.buddyUrl)return aiAdd('b','Study Buddy is not set up yet. The owner needs to add the buddyUrl line in config.js.');
+ if(!S.user||!DB)return aiAdd('b','Please sign in with Google first (in the Live Room chat screen) to use Study Buddy.');
+ if(S.banned)return aiAdd('b','You are muted by the owner.');
+ const LIM=+C.buddyLimit||15,tr=await DB.ref('quizhub_buddy/'+S.uid+'/'+dkey()).transaction(n=>(n||0)>=LIM?undefined:(n||0)+1);
+ if(!tr.committed)return aiAdd('b','You have used all '+LIM+' questions for today. Come back tomorrow! 🌙');
+ AIB=true;const w=aiAdd('b','…');
+ try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),30000);
+  const r=await fetch(C.buddyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q,lang:lname(S.lang,'en'),h:AIH.slice(-6)}),signal:c.signal});clearTimeout(tm);
+  const j=await r.json();
+  if(j.a){const a=j.a.replace(/\*\*/g,'').replace(/^#+\s*/gm,'');w.firstChild.textContent=a;AIH.push({r:'u',t:q},{r:'m',t:a});$('#ai-sub').textContent=(LIM-tr.snapshot.val())+' questions left today'}
+  else w.firstChild.textContent='⚠ '+(j.e||'Something went wrong.')
+ }catch(e){w.firstChild.textContent='⚠ Study Buddy is not answering right now. Try again in a minute.'}
+ AIB=false;$('#ai-m').scrollTop=1e6}
+$('#mq-b-ai').onclick=()=>{$('#mq-ai').classList.add('on');if(!$('#ai-m').children.length)aiAdd('b','Hi! I’m your Study Buddy 🤖 Ask me about any MCQ or topic, in any language. Tap a suggestion below to start.')};
+const aiSend=()=>{const i=$('#ai-i'),v=i.value;i.value='';aiAsk(v)};
+$('#ai-s').onclick=aiSend;$('#ai-i').onkeydown=e=>{if(e.key==='Enter')aiSend()};
+$('#ai-ch').onclick=e=>{if(e.target.tagName==='BUTTON')aiAsk(e.target.textContent)};
 
 /* ---------- Go live ---------- */
 if(DB){

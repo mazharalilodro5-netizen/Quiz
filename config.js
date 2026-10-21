@@ -10,6 +10,7 @@ window.MQ_CFG={
   messagingSenderId:"214363213775",
   appId:"214363213775"
  },
- ownerEmail:"mazharalilodro5@gmail.com",  /* only this Google account gets the owner panel */
- requireLogin:false  /* change to true if people must sign in before sending messages */
+ ownerEmail:"mazharalilodro5@gmail.com",
+ buddyUrl:"https://quiz-buddy.mazharalilodro5.workers.dev",
+ requireLogin:false
 };
