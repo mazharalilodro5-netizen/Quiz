@@ -533,15 +533,15 @@ if(DB)DB.ref('quizhub_story_meta').on('value',x=>{const cut=Date.now()-864e5,a=[
  a.sort((p,q)=>p.ts-q.ts);STR=a;strip()});
 
 /* ---------- V21: picture + voice note sending ---------- */
-const MED={},fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');let AUD=null,REC=null,MP='';
+const MED={},fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');let AUD=null,REC=null,MP='',MIC=null;
 document.body.insertAdjacentHTML('beforeend','<input type="file" id="fm" accept="image/*" hidden><div id="iv"><img alt=""></div>');
 ['ch','pv'].forEach(p=>{const c=$('#'+p+'-i').closest('.cmp');
  c.insertAdjacentHTML('beforebegin','<div class="rcb"><span>● Recording 0:00</span><button data-a="x">✕</button><button data-a="s">Send ➤</button></div>');
  $('#'+p+'-s').insertAdjacentHTML('beforebegin','<button class="mb pbtn" title="Send a photo">📷</button><button class="mb mbtn" title="Voice note">🎤</button>')});
 const HRS=+(C.mediaHours)||48;
-const IDB=new Promise(res=>{try{const r=indexedDB.open('mqmedia',1);r.onupgradeneeded=()=>r.result.createObjectStore('m');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(e){res(null)}});
-const lget=async k=>{const db=await IDB;if(!db)return null;return new Promise(res=>{try{const q=db.transaction('m').objectStore('m').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})};
-const lput=async(k,v)=>{const db=await IDB;if(!db)return;return new Promise(res=>{try{const t=db.transaction('m','readwrite');t.objectStore('m').put(v,k);t.oncomplete=t.onerror=()=>res()}catch(e){res()}})};
+const IDB=new Promise(res=>{setTimeout(()=>res(null),2500);try{const r=indexedDB.open('mqmedia',1);r.onupgradeneeded=()=>r.result.createObjectStore('m');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(e){res(null)}});
+const lget=async k=>{const db=await IDB;if(!db)return null;return new Promise(res=>{setTimeout(()=>res(null),2000);try{const q=db.transaction('m').objectStore('m').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})};
+const lput=async(k,v)=>{const db=await IDB;if(!db)return;return new Promise(res=>{setTimeout(res,2000);try{const t=db.transaction('m','readwrite');t.objectStore('m').put(v,k);t.oncomplete=t.onerror=()=>res()}catch(e){res()}})};
 function askStore(){if(get('mq_store','')||!navigator.storage||!navigator.storage.persist)return;put('mq_store','1');
  if(confirm('Save pictures and voice notes on this phone?\n\nThey stay on your phone after they are removed online, and it saves internet data. Tap OK, then allow storage if your browser asks.')){try{navigator.storage.persist()}catch(e){}}}
 const mpath=b=>'quizhub_media/'+(b.closest('#mq-pv')?'p_'+P.room+'/':'')+b._d.mid;
@@ -580,16 +580,18 @@ function recStop(send){if(!REC)return;REC.cancel=!send;REC.mr.stop()}
 async function recStart(p){
  if(!navigator.mediaDevices||!window.MediaRecorder)return alert('Voice notes are not supported on this browser.');
  if(!DB)return alert('Not connected to the server yet.');if(p==='pv'&&!P.key)return;
- let st;try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return alert('Please allow the microphone to send voice notes.')}
+ let st=MIC&&MIC.s.active?MIC.s:null;
+ if(!st)try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return alert(e&&(e.name==='NotAllowedError'||e.name==='SecurityError')?'The microphone is blocked here. Open this website in Chrome (not inside another app), tap the 🔒 icon next to the address, and set Microphone to Allow.':e&&e.name==='NotFoundError'?'No microphone was found on this device.':'Could not start the microphone ('+(e&&e.name||'error')+').')}
+ clearTimeout(MIC&&MIC.t);MIC={s:st};
  const mt=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg'].find(x=>MediaRecorder.isTypeSupported(x))||'',ch=[],t0=Date.now();
- const mr=new MediaRecorder(st,mt?{mimeType:mt,audioBitsPerSecond:24000}:{audioBitsPerSecond:24000});
+ let mr;try{mr=new MediaRecorder(st,mt?{mimeType:mt,audioBitsPerSecond:24000}:{audioBitsPerSecond:24000})}catch(e){try{mr=new MediaRecorder(st)}catch(x){st.getTracks().forEach(k=>k.stop());MIC=null;return alert('Voice recording is not supported on this browser ('+(x&&x.name||'error')+').')}}
  mr.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};
  const bar=$('#mq-'+p+' .rcb span');
  REC={p,mr,cancel:false,tm:setInterval(()=>{const n=Math.floor((Date.now()-t0)/1000);bar.textContent='● Recording '+fmt(n);if(n>=60)recStop(true)},300)};
- mr.onstop=async()=>{st.getTracks().forEach(x=>x.stop());const r=REC;clearInterval(r.tm);REC=null;showRec(p,false);if(r.cancel)return;
+ mr.onstop=async()=>{if(MIC)MIC.t=setTimeout(()=>{st.getTracks().forEach(x=>x.stop());MIC=null},60000);const r=REC;clearInterval(r.tm);REC=null;showRec(p,false);if(r.cancel)return;
   const dur=Math.round((Date.now()-t0)/1000);if(dur<1)return;
   const url=await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(new Blob(ch,{type:mr.mimeType||mt||'audio/webm'}))});
-  if(url.length>450000)return alert('That voice note is too long. Keep it under 1 minute.');sendMedia(p,'v',url,dur)};
+  if(url.length>450000)return alert('That voice note is too long. Keep it under 1 minute.');sendMedia(p,'v',url,dur).catch(e=>alert('Voice note could not be sent ('+(e&&(e.code||e.message)||'error')+').'))};
  mr.start();showRec(p,true)}
 $('#fm').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
  try{let d=await shrink(f,800,.7,false);if(d.length>140000)d=await shrink(f,640,.55,false);if(d.length>140000)throw new Error('big');await sendMedia(MP,'i',d)}
