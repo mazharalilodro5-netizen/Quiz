@@ -538,25 +538,40 @@ document.body.insertAdjacentHTML('beforeend','<input type="file" id="fm" accept=
 ['ch','pv'].forEach(p=>{const c=$('#'+p+'-i').closest('.cmp');
  c.insertAdjacentHTML('beforebegin','<div class="rcb"><span>● Recording 0:00</span><button data-a="x">✕</button><button data-a="s">Send ➤</button></div>');
  $('#'+p+'-s').insertAdjacentHTML('beforebegin','<button class="mb pbtn" title="Send a photo">📷</button><button class="mb mbtn" title="Voice note">🎤</button>')});
-async function getMed(b){const d=b._d,priv=!!b.closest('#mq-pv'),path='quizhub_media/'+(priv?'p_'+P.room+'/':'')+d.mid;
+const HRS=+(C.mediaHours)||48;
+const IDB=new Promise(res=>{try{const r=indexedDB.open('mqmedia',1);r.onupgradeneeded=()=>r.result.createObjectStore('m');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(e){res(null)}});
+const lget=async k=>{const db=await IDB;if(!db)return null;return new Promise(res=>{try{const q=db.transaction('m').objectStore('m').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})};
+const lput=async(k,v)=>{const db=await IDB;if(!db)return;return new Promise(res=>{try{const t=db.transaction('m','readwrite');t.objectStore('m').put(v,k);t.oncomplete=t.onerror=()=>res()}catch(e){res()}})};
+function askStore(){if(get('mq_store','')||!navigator.storage||!navigator.storage.persist)return;put('mq_store','1');
+ if(confirm('Save pictures and voice notes on this phone?\n\nThey stay on your phone after they are removed online, and it saves internet data. Tap OK, then allow storage if your browser asks.')){try{navigator.storage.persist()}catch(e){}}}
+const mpath=b=>'quizhub_media/'+(b.closest('#mq-pv')?'p_'+P.room+'/':'')+b._d.mid;
+async function getMed(b){const d=b._d,path=mpath(b),priv=!!b.closest('#mq-pv');
  if(MED[path])return MED[path];
+ const lc=await lget(path);if(lc)return MED[path]=lc;
+ if(!DB)return null;
  const v=(await DB.ref(path).once('value')).val();if(!v)return null;
  const u=priv?await dec(v):v,good=d.mt==='i'?/^data:image\/(jpeg|png|webp);base64,/.test(u||''):/^data:audio\/(webm|mp4|ogg|mpeg|aac|x-m4a)[;,]/.test(u||'');
- return good?(MED[path]=u):null}
+ if(good){MED[path]=u;lput(path,u)}return good?u:null}
 function stopAud(){if(!AUD)return;AUD.a.pause();AUD.b.querySelector('.md').classList.remove('playing');AUD.bt.textContent='▶';AUD=null}
 function mediaUI(b,d){b.dataset.mt=d.mt;const m=document.createElement('div');m.className='md';b.querySelector('.t').after(m);
+ const old=()=>d.ts&&Date.now()-d.ts>HRS*36e5;let put=null;
  if(d.mt==='i'){const bt=document.createElement('button');bt.className='mdb';bt.textContent='📷 Tap to view photo'+(d.sz?' · '+d.sz+' KB':'');
-  bt.onclick=async()=>{if(!DB)return;bt.textContent='Loading…';const u=await getMed(b);if(!u){bt.textContent='⚠ Photo unavailable';return}
-   const im=new Image();im.src=u;im.className='mdi';im.onclick=()=>{$('#iv img').src=u;$('#iv').classList.add('on')};m.replaceChildren(im)};m.appendChild(bt)}
+  put=u=>{const im=new Image();im.src=u;im.className='mdi';im.onclick=()=>{$('#iv img').src=u;$('#iv').classList.add('on')};m.replaceChildren(im)};
+  bt.onclick=async()=>{askStore();bt.textContent='Loading…';const u=await getMed(b);if(!u){bt.textContent=old()?'⌛ Photo expired':'⚠ Photo unavailable';return}put(u)};m.appendChild(bt)}
  else{m.className='md vm';m.innerHTML='<button class="vb">▶</button><span class="vw">'+'<i></i>'.repeat(18)+'</span><small></small>';m.querySelector('small').textContent=fmt(d.dur||0);
   m.querySelectorAll('.vw i').forEach((i,k)=>i.style.height=(6+(k*7)%18)+'px');const bt=m.querySelector('.vb');
-  bt.onclick=async()=>{if(AUD&&AUD.b===b){stopAud();return}stopAud();bt.textContent='…';const u=await getMed(b);if(!u){bt.textContent='⚠';return}
+  bt.onclick=async()=>{askStore();if(AUD&&AUD.b===b){stopAud();return}stopAud();bt.textContent='…';const u=await getMed(b);
+   if(!u){bt.textContent='▶';alert(old()?'⌛ This voice note has expired.':'This voice note is unavailable.');return}
    const a=new Audio(u);AUD={a,b,bt};m.classList.add('playing');bt.textContent='❚❚';a.onended=stopAud;
-   a.onerror=()=>{stopAud();alert('This voice note cannot be played on your phone. It may have been recorded on a different type of phone.')};a.play().catch(stopAud)}}}
+   a.onerror=()=>{stopAud();alert('This voice note cannot be played on your phone. It may have been recorded on a different type of phone.')};a.play().catch(stopAud)}}
+ setTimeout(async()=>{if(!b.isConnected)return;const path=mpath(b);
+  if(old()){if(DB)DB.ref(path).remove();const u=await lget(path);if(u&&put)put(u);return}
+  if(put){const u=MED[path]||await lget(path);if(u)put(u);else if(DB&&!b._me&&d.ts>T0)getMed(b).then(x=>x&&put(x))}
+  else if(DB&&!b._me&&d.ts>T0)getMed(b)},0)}
 async function sendMedia(p,kind,data,dur){
  if(!DB)return alert('Not connected to the server yet.');if(p==='pv'&&!P.key)return;if(!ok())return;
  const priv=p==='pv',id=DB.ref('quizhub_media').push().key;
- await DB.ref('quizhub_media/'+(priv?'p_'+P.room+'/':'')+id).set(priv?await enc(data):data);
+ const mp='quizhub_media/'+(priv?'p_'+P.room+'/':'')+id;await DB.ref(mp).set(priv?await enc(data):data);await lput(mp,data);
  const tx=kind==='i'?'📷 Photo':'🎤 Voice note',d={name:S.name||'Guest',lang:S.lang,uid:S.uid,av:S.av||null,mt:kind,mid:id,sz:Math.round(data.length/1024),dur:dur||null,ts:TS()};
  if(priv)d.enc=await enc(tx);else{d.text=tx;d.cc=S.cc}
  DB.ref(priv?'quizhub_private/'+P.room+'/msgs':'quizhub_chat').push(d)}
@@ -580,8 +595,8 @@ $('#fm').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)re
  try{let d=await shrink(f,800,.7,false);if(d.length>140000)d=await shrink(f,640,.55,false);if(d.length>140000)throw new Error('big');await sendMedia(MP,'i',d)}
  catch(x){alert('Could not send that picture. Try another one.')}};
 document.addEventListener('click',e=>{const t=e.target,mq=t.closest('.mq'),pn=mq?mq.id.slice(3):'';
- if(t.closest('.pbtn')){MP=pn;$('#fm').click()}
- else if(t.closest('.mbtn')){REC?recStop(true):recStart(pn)}
+ if(t.closest('.pbtn')){askStore();MP=pn;$('#fm').click()}
+ else if(t.closest('.mbtn')){askStore();REC?recStop(true):recStart(pn)}
  else if(t.closest('.rcb button'))recStop(t.dataset.a==='s');
  else if(t.closest('.mq .x')&&REC)recStop(false);
  else if(t.closest('#iv'))$('#iv').classList.remove('on')});
