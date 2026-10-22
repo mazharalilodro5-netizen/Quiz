@@ -6,9 +6,9 @@ window.MQ_CFG={
   authDomain:"mazhar-quiz-hub.firebaseapp.com",
   databaseURL:"https://mazhar-quiz-hub-default-rtdb.firebaseio.com",
   projectId:"mazhar-quiz-hub",
-  storageBucket:"https://mazhar-quiz-hub.firebasestorage.app",
+  storageBucket:"mazhar-quiz-hub.firebasestorage.app",
   messagingSenderId:"214363213775",
-  appId:"214363213775"
+  appId:"1:214363213775:web:a40319be02d6b03b820cba"
  },
  ownerEmail:"mazharalilodro5@gmail.com",
  buddyUrl:"https://quiz-buddy.mazharalilodro5.workers.dev",
