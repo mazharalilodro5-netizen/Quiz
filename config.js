@@ -12,5 +12,6 @@ window.MQ_CFG={
  },
  ownerEmail:"mazharalilodro5@gmail.com",
  buddyUrl:"https://quiz-buddy.mazharalilodro5.workers.dev",
+vapidKey:"BJKPHuiKgHTMTPaIct8NqGmIkbJCw1RI_sS4jtv4rwGk40sKHUpV7fslb6LL45hfysLS8coSjJSBBt9l2id_wvY" 
  requireLogin:false
 };

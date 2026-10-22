@@ -48,6 +48,7 @@ input[type="range"].vol::-moz-range-thumb { width: 20px; height: 20px; border-ra
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
 <style>
 .mq-fab{position:fixed;right:16px;z-index:9999;width:54px;height:54px;border:0;border-radius:50%;color:#fff;font-size:22px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.3)}
 .mq-fab i{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:10px;background:#ef4444;font:700 11px/19px system-ui;font-style:normal;display:none}
@@ -137,6 +138,9 @@ input[type="range"].vol::-moz-range-thumb { width: 20px; height: 20px; border-ra
 #iv{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center}#iv.on{display:flex}#iv img{max-width:100%;max-height:100%}
 #mq-b-ai{bottom:354px;background:linear-gradient(135deg,#7c3aed,#06b6d4)}
 .mq .chips2{display:flex;gap:6px;flex-wrap:wrap;padding:6px 10px;background:var(--bm)}.mq .chips2 button{border:1px solid var(--ac);color:var(--ac);background:none;border-radius:16px;padding:5px 11px;font-size:13px}
+.mq .sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:var(--th);border-radius:12px}.mq .sw small{opacity:.7}
+.mq .sw input{width:48px;height:28px;-webkit-appearance:none;appearance:none;background:var(--bd);border:0;border-radius:14px;position:relative;cursor:pointer;flex:none;padding:0}
+.mq .sw input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}.mq .sw input:checked{background:var(--ac)}.mq .sw input:checked::after{left:23px}
 </style>
 <button class="mq-fab" id="mq-b-chat" title="Live chat">💬<i></i></button>
 <button class="mq-fab" id="mq-b-fb" title="Feedback">⭐</button>
@@ -225,18 +229,18 @@ function bubble(d,me,del){
 const sys=(L,t)=>{const d=document.createElement('div');d.className='b sys';d.textContent=t;L.appendChild(d);return d};
 const stick=(L,f,force)=>{const n=L.scrollHeight-L.scrollTop-L.clientHeight<150;f();if(n||force)L.scrollTop=L.scrollHeight};
 const rm=(sel,id)=>{const e=$(sel).querySelector(`[data-id="${id}"]`);if(e)e.remove()};
-let last=0;const ok=()=>{if(S.banned){alert('You are muted by the owner.');return false}if(C.requireLogin&&!S.user){alert('Please sign in with Google first (top of the chat).');return false}return Date.now()-last>700&&(last=Date.now())};
+let last=0;const ok=()=>{if(S.banned){alert('You are muted by the owner.');return false}if(C.requireLogin&&!S.user){alert('Please sign in with Google first (top of the chat).');return false}if(Date.now()-last>700){last=Date.now();SND('send');return true}return false};
 const T0=Date.now();
 
 /* ---------- Public chat ---------- */
 function chatAdd(id,d){
  const L=$('#ch-m');if(!d||!d.text||L.querySelector(`[data-id="${id}"]`))return;
  const me=d.uid===S.uid,b=bubble(d,me,()=>DB&&DB.ref('quizhub_chat/'+id).remove());b.dataset.id=id;
- b._p='quizhub_chat/'+id;stick(L,()=>L.appendChild(b),me);
+ b._p='quizhub_chat/'+id;stick(L,()=>L.appendChild(b),me);if(!me&&d.ts>T0)SND('recv');
  if(!me&&d.ts>T0&&!$('#mq-ch').classList.contains('on')){const i=$('#mq-b-chat i');i.textContent=(+i.textContent||0)+1;i.style.display='block'}}
 function sendChat(st){const i=$('#ch-i'),t=st||i.value.trim();if(!t||!ok())return;if(!st)i.value='';
  const d={name:S.name||'Guest',cc:S.cc,text:t,lang:S.lang,uid:S.uid,av:S.av||null,ts:TS()};if(st)d.st=1;if(RP&&RPp==='ch'){d.rp=RP;clrRP()}
- if(DB)DB.ref('quizhub_chat').push(d);else chatAdd('l'+Date.now(),d)}
+ if(DB){DB.ref('quizhub_chat').push(d);ntf('public',d.st?'Sticker '+d.text:d.text)}else chatAdd('l'+Date.now(),d)}
 $('#ch-s').onclick=()=>sendChat();
 $('#ch-i').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();sendChat()}};
 
@@ -261,7 +265,7 @@ const copy=u=>navigator.clipboard?navigator.clipboard.writeText(u).then(()=>aler
 function privAdd(id,d){
  const L=$('#pv-m');if(L.querySelector(`[data-id="${id}"]`))return;
  const me=d.uid===S.uid,b=bubble(d,me,me?()=>DB&&DB.ref('quizhub_private/'+P.room+'/msgs/'+id).remove():null);b.dataset.id=id;
- b._p='quizhub_private/'+P.room+'/msgs/'+id;const nx=[...L.children].find(c=>c._d&&c._d.ts>d.ts);stick(L,()=>L.insertBefore(b,nx||null),me)}
+ b._p='quizhub_private/'+P.room+'/msgs/'+id;const nx=[...L.children].find(c=>c._d&&c._d.ts>d.ts);stick(L,()=>L.insertBefore(b,nx||null),me);if(!me&&d.ts>T0)SND('recv')}
 function leave(){if(P.ref)P.ref.off();P.ref=null;P.key=null;P.room='';$('#pv-chat').hidden=true;$('#pv-join').hidden=false;$('#pv-p').value='';$('#pv-sub').textContent='End-to-end encrypted'}
 async function join(){
  const room=$('#pv-r').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,''),pw=$('#pv-p').value;
@@ -284,7 +288,7 @@ $('#pv-sh').onclick=()=>navigator.share?navigator.share({title:'Private room',te
 $('#pv-l').onclick=leave;
 async function sendPriv(st){const i=$('#pv-i'),t=st||i.value.trim();if(!t||!P.key||!ok())return;if(!st)i.value='';
  const e=await enc(t),d={name:S.name||'Guest',enc:e,lang:S.lang,uid:S.uid,av:S.av||null,ts:TS()};if(st)d.st=1;if(RP&&RPp==='pv'){d.rpe=await enc(JSON.stringify(RP));clrRP()}
- if(DB)DB.ref('quizhub_private/'+P.room+'/msgs').push(d);else privAdd('l'+Date.now(),{...d,text:t,ts:Date.now()})}
+ if(DB){DB.ref('quizhub_private/'+P.room+'/msgs').push(d);ntf('p_'+P.room,'')}else privAdd('l'+Date.now(),{...d,text:t,ts:Date.now()})}
 $('#pv-s').onclick=()=>sendPriv();
 $('#pv-i').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();sendPriv()}};
 
@@ -576,7 +580,7 @@ async function sendMedia(p,kind,data,dur){
  const mp='quizhub_media/'+(priv?'p_'+P.room+'/':'')+id;await DB.ref(mp).set(priv?await enc(data):data);await lput(mp,data);
  const tx=kind==='i'?'📷 Photo':'🎤 Voice note',d={name:S.name||'Guest',lang:S.lang,uid:S.uid,av:S.av||null,mt:kind,mid:id,sz:Math.round(data.length/1024),dur:dur||null,ts:TS()};
  if(priv)d.enc=await enc(tx);else{d.text=tx;d.cc=S.cc}
- DB.ref(priv?'quizhub_private/'+P.room+'/msgs':'quizhub_chat').push(d)}
+ DB.ref(priv?'quizhub_private/'+P.room+'/msgs':'quizhub_chat').push(d);ntf(priv?'p_'+P.room:'public',kind==='i'?'📷 Photo':'🎤 Voice note')}
 const showRec=(p,on)=>$('#mq-'+p+' .rcb').classList.toggle('on',on);
 function recStop(send){if(!REC)return;REC.cancel=!send;REC.mr.stop()}
 async function recStart(p){
@@ -629,6 +633,42 @@ $('#mq-b-ai').onclick=()=>{$('#mq-ai').classList.add('on');if(!$('#ai-m').childr
 const aiSend=()=>{const i=$('#ai-i'),v=i.value;i.value='';aiAsk(v)};
 $('#ai-s').onclick=aiSend;$('#ai-i').onkeydown=e=>{if(e.key==='Enter')aiSend()};
 $('#ai-ch').onclick=e=>{if(e.target.tagName==='BUTTON')aiAsk(e.target.textContent)};
+
+/* ---------- V24: notifications + sounds ---------- */
+let AC=null;
+const SND=k=>{if(get('mq_snd','1')!=='1')return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+ const t=AC.currentTime,tone=(f,s,d,v)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+s);g.gain.linearRampToValueAtTime(v,t+s+.01);g.gain.exponentialRampToValueAtTime(.0001,t+s+d);o.connect(g);g.connect(AC.destination);o.start(t+s);o.stop(t+s+d+.02)};
+ if(k==='send'){tone(660,0,.09,.18);tone(990,.07,.12,.14)}else{tone(880,0,.12,.2);tone(1175,.1,.18,.18)}}catch(e){}};
+document.addEventListener('pointerdown',()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}});
+const NB=()=>(C.buddyUrl||'').replace(/\/$/,'');
+const ntf=(topic,body)=>{if(!NB()||S.banned)return;try{fetch(NB()+'/notify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic,name:S.name||'Guest',body:topic==='public'?String(body||'').slice(0,80):''})}).catch(()=>{})}catch(e){}};
+const topics=()=>{try{return JSON.parse(get('mq_topics','[]'))}catch(e){return[]}};
+async function wpost(path,o){const r=await fetch(NB()+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});return r.json()}
+async function sub(t,tk){tk=tk||get('mq_tok','');if(!tk||!NB())return;const j=await wpost('/sub',{token:tk,topic:t});if(j.ok){const a=topics();if(!a.includes(t)){a.push(t);put('mq_topics',JSON.stringify(a))}}else throw new Error(j.e||'subscribe failed')}
+const getTok=async()=>{const reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;return firebase.messaging().getToken({vapidKey:C.vapidKey,serviceWorkerRegistration:reg})};
+const pushOK=()=>!!(DB&&C.vapidKey&&NB()&&'Notification' in window&&'serviceWorker' in navigator&&typeof firebase.messaging==='function'&&firebase.messaging.isSupported());
+async function pushOn(){
+ if(!C.vapidKey||!NB())return 'Notifications are not set up yet. The owner needs to finish the setup.';
+ if(!pushOK())return 'This browser does not support notifications. On iPhone, add the website to your Home Screen first.';
+ if(await Notification.requestPermission()!=='granted')return 'Notifications are blocked. Allow them for this website in your browser settings.';
+ const tk=await getTok();if(!tk)return 'Could not get permission from the notification service.';
+ put('mq_tok',tk);await sub('public');if(P.room)await sub('p_'+P.room);put('mq_push','1');return ''}
+async function pushOff(){const tk=get('mq_tok','');for(const t of topics())try{await wpost('/unsub',{token:tk,topic:t})}catch(e){}try{await firebase.messaging().deleteToken()}catch(e){}put('mq_topics','[]');put('mq_tok','');put('mq_push','0')}
+document.body.insertAdjacentHTML('beforeend','<div class="mq" id="mq-nt"><div class="mq-box"><div class="hd"><button class="x">←</button><div class="ttl"><b>🔔 Notifications and sounds</b><small>You can change this any time</small></div><button class="th" title="Theme">🎨</button></div><div class="jc"><label class="sw"><span>🔔 Notifications<br><small>Get alerts like “Ali messaged you” even when the app is closed</small></span><input type="checkbox" id="nt-p"></label><label class="sw"><span>🔊 Message sounds<br><small>A small sound when you send or receive a message</small></span><input type="checkbox" id="nt-s"></label><div class="note" id="nt-m"></div><button id="nt-t">Send a test notification</button></div></div></div>');
+$('#mq-ch .hd .th').insertAdjacentHTML('beforebegin','<button class="bell" title="Notifications and sounds">🔔</button>');
+paint();
+const nm=t=>{$('#nt-m').textContent=t};
+function syncNt(){$('#nt-p').checked=get('mq_push','0')==='1'&&'Notification' in window&&Notification.permission==='granted';$('#nt-s').checked=get('mq_snd','1')==='1';
+ nm(!C.vapidKey||!NB()?'Notifications are not set up yet. The owner needs to finish the setup.':('Notification' in window&&Notification.permission==='denied')?'Notifications are blocked in your browser settings for this website.':'Tip: on iPhone, add the website to your Home Screen to receive notifications.')}
+$('#nt-s').onchange=e=>{put('mq_snd',e.target.checked?'1':'0');if(e.target.checked)SND('recv')};
+$('#nt-p').onchange=async e=>{const on=e.target.checked;nm('Please wait…');
+ try{if(on){const m=await pushOn();if(m){e.target.checked=false;nm(m)}else nm('Notifications are ON ✅')}else{await pushOff();nm('Notifications are OFF')}}
+ catch(x){e.target.checked=false;nm('Could not change this ('+(x&&(x.code||x.message)||'error')+').')}};
+$('#nt-t').onclick=async()=>{if(!('Notification' in window)||Notification.permission!=='granted')return nm('Turn on notifications first.');
+ try{const reg=await navigator.serviceWorker.ready;reg.showNotification('Quiz Hub','This is a test notification ✅',{icon:'icon-192.png'});nm('Test sent. If you did not see it, check your phone’s notification settings.')}catch(e){nm('Could not show a test notification.')}};
+document.addEventListener('click',e=>{if(e.target.closest('.bell')){$('#mq-nt').classList.add('on');syncNt()}});
+let PT='';setInterval(()=>{if(get('mq_push','0')==='1'&&P.room&&P.room!==PT){PT=P.room;sub('p_'+P.room).catch(()=>{})}if(!P.room)PT=''},2000);
+if(get('mq_push','0')==='1'&&pushOK()&&Notification.permission==='granted')getTok().then(tk=>{if(tk&&tk!==get('mq_tok','')){put('mq_tok',tk);topics().forEach(t=>sub(t,tk).catch(()=>{}))}}).catch(()=>{});
 
 /* ---------- Go live ---------- */
 if(DB){
