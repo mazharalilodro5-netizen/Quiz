@@ -1,11 +1,12 @@
 {
- "name": "Quiz Hub",
- "short_name": "Quiz Hub",
+ "name": "Plexo 5",
+ "short_name": "Plexo 5",
+ "description": "One world. Every connection.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
- "background_color": "#4c1d95",
- "theme_color": "#4c1d95",
+ "background_color": "#ffffff",
+ "theme_color": "#ff3d65",
  "icons": [
   {
    "src": "icon-192.png",
